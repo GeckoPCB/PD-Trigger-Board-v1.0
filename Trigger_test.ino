@@ -1,0 +1,290 @@
+#include <GyverTimers.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128 // OLED display width,  in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+// declare an SSD1306 display object connected to I2C
+Adafruit_SSD1306 oled(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+//unsigned long startMillis;  //some global variables available anywhere in the program
+//unsigned long currentMillis;
+//const unsigned long period = 1000;  //the value is a number of milliseconds
+
+float vbus = 0.0;
+float current = 0.0;
+float as = 0.0;
+float ah = 0.0;
+float ws = 0.0;
+float wh = 0.0;
+
+int upbutton;
+int downbutton;
+int leftbutton;
+int rightbutton;
+int exebutton;
+int checkflag = LOW;
+int tempcheck = 0;
+int vcheck = 0;
+
+int vertical = 0;
+int horizontal = 0;
+
+//String name = "Trigger";
+//String version = " v1";
+//String volt = "";
+//String curr = "";
+
+
+void setup()
+{
+  Serial.begin(9600);
+  Timer1.setFrequency(10); 
+  Timer1.enableISR();
+  // initialize OLED display with address 0x3C for 128x64
+  if (!oled.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    while (true);
+  }
+  oled.clearDisplay();
+  //startMillis = millis();
+  
+  pinMode(13, INPUT_PULLUP);//UP
+  pinMode(12, INPUT_PULLUP);//DOWN
+  pinMode(11, INPUT_PULLUP);//LEFT
+  pinMode(10, INPUT_PULLUP);//RIGHT
+  pinMode(9, INPUT_PULLUP);//EXECUTE
+  pinMode(7, OUTPUT);digitalWrite(7, LOW);//18V
+  pinMode(6, OUTPUT);digitalWrite(6, LOW);//15V
+  pinMode(5, OUTPUT);digitalWrite(5, LOW);//12V
+  pinMode(4, OUTPUT);digitalWrite(4, HIGH);//9V
+  pinMode(3, OUTPUT);digitalWrite(3, LOW);//5V
+  //oled.begin(SSD1306_SWITCHCAPVCC, 0x3D); //or 0x3C
+}
+
+
+void loop()
+{
+  upbutton = digitalRead(13);
+  downbutton = digitalRead(12);
+  leftbutton = digitalRead(11);
+  rightbutton = digitalRead(10);
+  exebutton = digitalRead(9);
+
+  optionselect();
+  execution();
+  displaypage();
+}
+
+void optionselect(){
+  if(upbutton == LOW){
+    delay(200);
+    vertical--;
+    if(vertical < 0) vertical = 4;
+  }
+  if(downbutton == LOW){
+    delay(200);
+    vertical++;
+    if(vertical > 4) vertical = 0;
+  }
+  if(leftbutton == LOW){
+    delay(200);
+    horizontal--;
+    if(horizontal < 0) horizontal = -1;
+  }
+  if(rightbutton == LOW){
+    delay(200);
+    horizontal++;
+    if(horizontal > 1) horizontal = 1;
+  }
+}
+
+void execution(){
+  if(exebutton == LOW){
+    delay(200);
+    displaypage();
+    if(vertical == 0){
+      digitalWrite(7, LOW);//18V
+      digitalWrite(6, LOW);//15V
+      digitalWrite(5, LOW);//12V
+      digitalWrite(4, HIGH);//9V Enable
+      digitalWrite(3, LOW);//5V
+    }
+    else if(vertical == 1){
+      digitalWrite(7, LOW);//18V
+      digitalWrite(6, LOW);//15V
+      digitalWrite(5, HIGH);//12V Enable
+      digitalWrite(4, LOW);//9V
+      digitalWrite(3, LOW);//5V
+    }
+    else if(vertical == 2){
+      digitalWrite(7, LOW);//18V
+      digitalWrite(6, HIGH);//15V Enable
+      digitalWrite(5, LOW);//12V
+      digitalWrite(4, LOW);//9V
+      digitalWrite(3, LOW);//5V
+    }
+    else if(vertical == 3){
+      digitalWrite(7, HIGH);//18V Enable
+      digitalWrite(6, LOW);//15V
+      digitalWrite(5, LOW);//12V
+      digitalWrite(4, LOW);//9V
+      digitalWrite(3, LOW);//5V
+    }
+    else if(vertical == 4){
+      //20V Enable
+      digitalWrite(7, LOW);//18V
+      digitalWrite(6, LOW);//15V
+      digitalWrite(5, LOW);//12V
+      digitalWrite(4, LOW);//9V
+      digitalWrite(3, LOW);//5V
+    }
+    tempcheck = vertical;
+    delay(200);
+    if(vbus > 8 && vbus < 10) vcheck = 0;
+    else if(vbus > 10 && vbus < 13) vcheck = 1;
+    else if(vbus > 13 && vbus < 16) vcheck = 2;
+    else if(vbus > 16 && vbus < 19) vcheck = 3;
+    else if(vbus > 19 && vbus < 21) vcheck = 4;
+
+    if(tempcheck == vcheck) checkflag = LOW;
+    else checkflag = HIGH;
+    
+  }
+}
+
+void displaypage(){
+  if(horizontal == 0)  mainpage();
+  //else if(horizontal == 1) sourcecodepage();
+  else if(horizontal == -1) cautionpage();
+}
+
+void sourcecodepage(){
+  
+}
+
+void mainpage(){
+  oled.clearDisplay();
+  oled.setTextSize(1); 
+  oled.setTextColor(WHITE, BLACK);
+  //oled.drawRoundRect(0, 0, 128, 64, 4, WHITE);
+  
+  oled.setCursor(0, 0);
+  if(vbus < 1) oled.println("POWER DISCONNECTED");
+  else{
+    oled.print("POWER CONNECTED");
+
+    oled.setCursor(0, 16);
+    if(checkflag == LOW) oled.print("TRIGGER SUCCESS");
+    else oled.print("PD NOT SUPPORTED");
+  }
+  
+  
+  oled.setCursor(0, 26);
+  if(vertical == 0) oled.print("TRIGGER: 9.00V");
+  else if(vertical == 1) oled.print("TRIGGER:12.00V");
+  else if(vertical == 2) oled.print("TRIGGER:15.00V");
+  else if(vertical == 3) oled.print("TRIGGER:18.00V");
+  else if(vertical == 4) oled.print("TRIGGER:20.00V");
+
+  oled.setCursor(0, 40);
+  if(vbus < 10) oled.print("VOLTAGE: ");
+  else oled.print("VOLTAGE:");
+  oled.print(vbus);oled.print("V");
+
+  oled.setCursor(0, 50);
+  oled.print("CURRENT: ");
+  oled.print(current);oled.print("A");
+  
+  oled.display();
+}
+
+void cautionpage(){
+  oled.clearDisplay();
+  oled.setTextSize(1); 
+  oled.setTextColor(WHITE, BLACK);
+  oled.setCursor(0, 0);
+  
+  oled.print("CAUTION              ");
+  oled.println();
+  printline();
+  nextline(0, 8);
+  oled.print("1.POWER Max. :24V 3A ");
+  nextline(0, 10);
+  oled.print("2.MCU VOLTAGE: 5V    ");
+  nextline(0, 10);
+  oled.print("3.OVP NOT SUPPORTED  ");
+  nextline(0, 16);
+  oled.print("Designed by Sober Lam");
+  oled.display();
+}
+
+/*void clearOLEDLine(int row){
+  
+  for (int y=row; y<=row+6; y++){
+    for (int x=0; x<127; x++){
+      oled.drawPixel(x, y, BLACK); 
+      }
+  }
+  //lcd.setCursor(0,line);
+}*/
+
+void printline(){
+  for (int y = oled.getCursorY(); y<= oled.getCursorY(); y++){
+    for (int x=0; x<127; x++){
+      oled.drawPixel(x, y, WHITE); 
+      }
+  }
+}
+
+void nextline(int x, int yoffset){
+  oled.setCursor(x, oled.getCursorY()+yoffset);
+}
+
+void arrow(){
+  oled.setCursor(30, oled.getCursorY());
+  oled.print(" <<-");
+  //oled.invertDisplay(true);
+}
+
+void oledDisplayCenter(String text) {
+  int16_t x1;
+  int16_t y1;
+  uint16_t width;
+  uint16_t height;
+  oled.setTextColor(WHITE, BLACK);
+  //oled.setTextSize(2);
+  oled.getTextBounds(text, 0, 0, &x1, &y1, &width, &height);
+
+  oled.setCursor((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2);
+  oled.print(text); // text to display
+  //oled.display();
+}
+
+ISR(TIMER1_A) {
+  vbus = ((analogRead(A0) * 5.0) / 1024) / 0.24;// ~24K/99K
+  vbus = (vbus * 4.6) / 5;// VUSB tune
+  if(vbus < 4) vbus = 0;
+  
+  //current = (analogRead(A2) * 5.0) / 1024;
+  for (int i = 0; i < 10; i++){
+    current = current + (analogRead(A2) * 5.0) / 1024;;
+  }
+  current = (current * 4.6) / 50;
+  current = (2.5 - current) / 0.49;
+  if(current < 0.2) current = 0;
+  else if(current > 2.3) current = 0;
+
+  /*as = current / 36000;
+  ah = ah + as;
+
+  ws = (vbus * current) / 36000;
+  wh = wh + ws;
+
+  if(vbus < 4){
+    ah = 0;
+    wh = 0;
+  }*/
+}
