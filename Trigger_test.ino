@@ -82,10 +82,6 @@ const unsigned char sourcecode [] PROGMEM = {
 
 float vbus = 0.0;
 float current = 0.0;
-float as = 0.0;
-float ah = 0.0;
-float ws = 0.0;
-float wh = 0.0;
 
 int upbutton;
 int downbutton;
@@ -101,7 +97,7 @@ int horizontal = 0;
 
 void setup()
 {
-  Serial.begin(9600);
+  //Serial.begin(9600);
   Timer1.setFrequency(10); 
   Timer1.enableISR();
   // initialize OLED display with address 0x3C for 128x64
@@ -241,13 +237,13 @@ void mainpage(){
   else{
     oled.print("POWER CONNECTED");
 
-    oled.setCursor(0, 16);
+    oled.setCursor(0, 26);
     if(checkflag == LOW) oled.print("TRIGGER SUCCESS");
-    else oled.print("PD NOT SUPPORTED");
+    else oled.print("PDV NOT SUPPORTED");
   }
   
   
-  oled.setCursor(0, 26);
+  oled.setCursor(0, 16);
   if(vertical == 0) oled.print("TRIGGER: 9.00V");
   else if(vertical == 1) oled.print("TRIGGER:12.00V");
   else if(vertical == 2) oled.print("TRIGGER:15.00V");
@@ -276,11 +272,11 @@ void cautionpage(){
   oled.println();
   printline();
   nextline(0, 8);
-  oled.print("1.POWER Max. :24V 3A ");
+  oled.print("POWER Max. :25V 3A ");
   nextline(0, 10);
-  oled.print("2.MCU VOLTAGE: 5V    ");
+  oled.print("MCU VOLTAGE: 5V    ");
   nextline(0, 10);
-  oled.print("3.OVP NOT SUPPORTED  ");
+  oled.print("OVP NOT SUPPORTED  ");
   nextline(0, 16);
   oled.print("Designed by Sober Lam");
   oled.display();
