@@ -138,13 +138,13 @@ void loop()
 void optionselect(){
   if(upbutton == LOW){
     delay(200);
-    vertical--;
-    if(vertical < 0) vertical = 4;
+    vertical++;
+    if(vertical > 4) vertical = 0;
   }
   if(downbutton == LOW){
     delay(200);
-    vertical++;
-    if(vertical > 4) vertical = 0;
+    vertical--;
+    if(vertical < 0) vertical = 4;
   }
   if(leftbutton == LOW){
     delay(200);
@@ -199,7 +199,7 @@ void execution(){
       digitalWrite(3, LOW);//5V
     }
     tempcheck = vertical;
-    delay(200);
+    delay(300);
     if(vbus > 8 && vbus < 10) vcheck = 0;
     else if(vbus > 10 && vbus < 13) vcheck = 1;
     else if(vbus > 13 && vbus < 16) vcheck = 2;
@@ -208,7 +208,6 @@ void execution(){
 
     if(tempcheck == vcheck) checkflag = LOW;
     else checkflag = HIGH;
-    
   }
 }
 
@@ -278,7 +277,7 @@ void cautionpage(){
   nextline(0, 10);
   oled.print("OVP NOT SUPPORTED  ");
   nextline(0, 16);
-  oled.print("Designed by Sober Lam");
+  oled.print("DESIGNED BY SOBER LAM");
   oled.display();
 }
 
@@ -316,24 +315,27 @@ void oledDisplayCenter(String text) {
 
 ISR(TIMER1_A) {
   vbus = ((analogRead(A0) * 5.0) / 1024) / 0.24;// ~24K/99K
-  vbus = (vbus * 4.6) / 5;// VUSB tune
+  vbus = (vbus * 4.65) / 5;// VUSB tune
   if(vbus < 4) vbus = 0;
+  /*else if(vbus > 8.5 && vbus < 9.5) vbus = 8.90;
+  else if(vbus > 11.5 && vbus < 12.5) vbus = 11.90;
+  else if(vbus > 14.5 && vbus < 15.5) vbus = 14.90;
+  else if(vbus > 17.5 && vbus < 18.5) vbus = 17.90;
+  else if(vbus > 19 && vbus < 21) vbus = 19.90;*/
   
   //current = (analogRead(A2) * 5.0) / 1024;
   for (int i = 0; i < 10; i++){
     current = current + (analogRead(A2) * 5.0) / 1024;;
   }
-  current = (current * 4.6) / 50;
-  current = (2.5 - current) / 0.49;
+  current = (current * 4.65) / 50;
+  current = (2.45 - current) / 0.49;
   if(current < 0.2) current = 0;
   else if(current > 2.3) current = 0;
 
   /*as = current / 36000;
   ah = ah + as;
-
   ws = (vbus * current) / 36000;
   wh = wh + ws;
-
   if(vbus < 4){
     ah = 0;
     wh = 0;
