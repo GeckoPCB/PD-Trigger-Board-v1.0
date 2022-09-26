@@ -293,11 +293,11 @@ void nextline(int x, int yoffset){
   oled.setCursor(x, oled.getCursorY()+yoffset);
 }
 
-void arrow(){
+/*void arrow(){
   oled.setCursor(30, oled.getCursorY());
   oled.print(" <<-");
   //oled.invertDisplay(true);
-}
+}*/
 
 void oledDisplayCenter(String text) {
   int16_t x1;
@@ -314,22 +314,19 @@ void oledDisplayCenter(String text) {
 }
 
 ISR(TIMER1_A) {
-  vbus = ((analogRead(A0) * 5.0) / 1024) / 0.24;// ~24K/99K
-  vbus = (vbus * 4.65) / 5;// VUSB tune
+  vbus = ((analogRead(A0) * 5.0) / 1024) / 0.2424;// ~24K/99K
+  //vbus = (vbus * 4.85) / 5;// VUSB tune
   if(vbus < 4) vbus = 0;
-  /*else if(vbus > 8.5 && vbus < 9.5) vbus = 8.90;
-  else if(vbus > 11.5 && vbus < 12.5) vbus = 11.90;
-  else if(vbus > 14.5 && vbus < 15.5) vbus = 14.90;
-  else if(vbus > 17.5 && vbus < 18.5) vbus = 17.90;
-  else if(vbus > 19 && vbus < 21) vbus = 19.90;*/
+  else if(vbus > 19 && vbus < 21) vbus = (vbus * 4.85) / 5;
+  else vbus = (vbus * 4.6) / 5;
   
   //current = (analogRead(A2) * 5.0) / 1024;
   for (int i = 0; i < 10; i++){
     current = current + (analogRead(A2) * 5.0) / 1024;;
   }
-  current = (current * 4.65) / 50;
+  current = (current * 4.6) / 50;
   current = (2.45 - current) / 0.49;
-  if(current < 0.2) current = 0;
+  if(current < 0.1) current = 0;
   else if(current > 2.3) current = 0;
 
   /*as = current / 36000;
