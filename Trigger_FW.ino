@@ -326,8 +326,8 @@ ISR(TIMER1_A) {
   }
   current = (current * 4.6) / 50;
   current = (2.45 - current) / 0.49;
-  if(current < 0.1) current = 0;
-  else if(current > 4.0) current = 0;
+  if(current < 0.1 || vbus == 0) current = 0;
+  
 
   /*as = current / 36000;
   ah = ah + as;
