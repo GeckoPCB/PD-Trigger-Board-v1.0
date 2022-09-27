@@ -98,7 +98,8 @@ int horizontal = 0;
 void setup()
 {
   //Serial.begin(9600);
-  Timer1.setFrequency(10); 
+  analogReference(EXTERNAL);//5.0V Vref
+  Timer1.setFrequency(50); 
   Timer1.enableISR();
   // initialize OLED display with address 0x3C for 128x64
   if (!oled.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
@@ -200,14 +201,14 @@ void execution(){
     }
     tempcheck = vertical;
     delay(300);
-    if(vbus > 8 && vbus < 10) vcheck = 0;
+    /*if(vbus > 8 && vbus < 10) vcheck = 0;
     else if(vbus > 10 && vbus < 13) vcheck = 1;
     else if(vbus > 13 && vbus < 16) vcheck = 2;
     else if(vbus > 16 && vbus < 19) vcheck = 3;
     else if(vbus > 19 && vbus < 21) vcheck = 4;
 
     if(tempcheck == vcheck) checkflag = LOW;
-    else checkflag = HIGH;
+    else checkflag = HIGH;*/
   }
 }
 
@@ -237,7 +238,7 @@ void mainpage(){
     oled.print("POWER CONNECTED");
 
     oled.setCursor(0, 26);
-    if(checkflag == LOW) oled.print("TRIGGER SUCCESS");
+    if(checkflag == LOW) oled.print("PDV SUPPORTED");
     else oled.print("PDV NOT SUPPORTED");
   }
   
@@ -271,9 +272,9 @@ void cautionpage(){
   oled.println();
   printline();
   nextline(0, 8);
-  oled.print("POWER Max. :25V 3A ");
+  oled.print("POWER Max. :25.0V 3A ");
   nextline(0, 10);
-  oled.print("MCU VOLTAGE: 5V    ");
+  oled.print("MCU VOLTAGE: 5.0V    ");
   nextline(0, 10);
   oled.print("OVP NOT SUPPORTED  ");
   nextline(0, 16);
@@ -314,19 +315,31 @@ void oledDisplayCenter(String text) {
 }
 
 ISR(TIMER1_A) {
-  vbus = ((analogRead(A0) * 5.0) / 1024) / 0.2424;// ~24K/99K
-  //vbus = (vbus * 4.85) / 5;// VUSB tune
+  vbus = 0;
+  current = 0;
+  for (int i = 0; i < 25; i++){
+    vbus = vbus + ((analogRead(A0) * 5.0) / 1024) / 0.2424;
+  }
+  //vbus = ((analogRead(A0) * 5.0) / 1024) / 0.2424;// ~24K/99K
+  vbus = vbus / 25;
   if(vbus < 4) vbus = 0;
-  else if(vbus > 19 && vbus < 21) vbus = (vbus * 4.85) / 5;
-  else vbus = (vbus * 4.6) / 5;
-  
-  //current = (analogRead(A2) * 5.0) / 1024;
-  for (int i = 0; i < 10; i++){
+  else if(vbus > 20.5) vbus = 0;
+  for (int i = 0; i < 25; i++){
     current = current + (analogRead(A2) * 5.0) / 1024;;
   }
-  current = (current * 4.6) / 50;
-  current = (2.45 - current) / 0.49;
-  if(current < 0.1 || vbus == 0) current = 0;
+  current = current / 25;
+  //Serial.println(current);
+  current = (2.45 - current) / 0.49;// 500mV/A
+  if(current < 0.03 || vbus == 0) current = 0;
+  
+
+  if(vbus > 8 && vbus < 10) vcheck = 0;
+  else if(vbus > 10 && vbus < 13) vcheck = 1;
+  else if(vbus > 13 && vbus < 16) vcheck = 2;
+  else if(vbus > 16 && vbus < 19) vcheck = 3;
+  else if(vbus > 19 && vbus < 21) vcheck = 4;
+  if(tempcheck == vcheck) checkflag = LOW;
+  else checkflag = HIGH;
   
 
   /*as = current / 36000;
